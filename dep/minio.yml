@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: snapshot-repository-pvc
+  namespace: test
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels: {}
+  name: snapshot-repository
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snapshot-repository
+  template:
+    metadata:
+      labels:
+        app: snapshot-repository
+      namespace: test
+    spec:
+      volumes:
+        - name: data-pvc
+          persistentVolumeClaim:
+            claimName: snapshot-repository-pvc
+      containers:
+        - env:
+            - name: MINIO_ACCESS_KEY
+              value: minio_access_key
+            - name: MINIO_SECRET_KEY
+              value: minio_secret_key
+            - name: MINIO_API_CORS_ALLOW_ORIGIN
+              value: '*'
+          image: minio/minio
+          imagePullPolicy: Always
+
+          args:
+            - server
+            - --address
+            - 0.0.0.0:9000
+            - --console-address
+            - :9001
+            - /data
+          name: minio
+          volumeMounts:
+            - mountPath: /data
+              name: data-pvc
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: snapshot-repository
+  namespace: test
+  labels:
+    app: snapshot-repository
+spec:
+  selector:
+    app: snapshot-repository
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 9000
+    - name: console
+      protocol: TCP
+      port: 9001
+      targetPort: 9001

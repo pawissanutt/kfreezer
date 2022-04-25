@@ -1,0 +1,53 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: snapshotreconciler-cluster-role
+  namespace: test
+rules:
+  - apiGroups:
+      - kfreezer.pawissanutt.github.io
+    resources:
+      - kfsnapshots
+      - kfsnapshots/status
+      - kfsnapshots/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - get
+      - list
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/log
+    verbs:
+      - get
+      - list
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - create
+---
+apiVersion: v1
+data:
+  KFREEZER_S3_URL: http://snapshot-repository
+  KFREEZER_S3_BUCKET: kfreezer
+  KFREEZER_S3_ACCESSKEY: minio_access_key
+  KFREEZER_S3_SECRETKEY: minio_secret_key
+kind: ConfigMap
+metadata:
+  name: kfreezer-cm

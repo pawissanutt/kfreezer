@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-job
+  namespace: test
+spec:
+  template:
+    spec:
+      containers:
+        - name: counting
+          image: core.harbor.10.131.36.2.nip.io/oaas/counting
+          securityContext:
+            capabilities:
+              add:
+#                - CAP_SYS_PTRACE
+                - ALL
+#            privileged: true
+#            allowPrivilegeEscalation: true
+      restartPolicy: Never
+
+#  backoffLimit: 4

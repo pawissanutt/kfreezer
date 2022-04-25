@@ -1,0 +1,251 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    app.quarkus.io/build-timestamp: 2022-04-25 - 01:24:47 +0000
+  labels:
+    app.kubernetes.io/name: kfreezer
+    app.kubernetes.io/version: 1.0.0-SNAPSHOT
+  name: kfreezer
+  namespace: test
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    app.quarkus.io/build-timestamp: 2022-04-25 - 01:24:47 +0000
+  labels:
+    app.kubernetes.io/name: kfreezer
+    app.kubernetes.io/version: 1.0.0-SNAPSHOT
+  name: kfreezer
+  namespace: test
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: kfreezer
+    app.kubernetes.io/version: 1.0.0-SNAPSHOT
+  type: ClusterIP
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kfreezer-view
+  namespace: test
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: kfreezer
+    namespace: test
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: runreconciler-role-binding
+  namespace: test
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: runreconciler-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: kfreezer
+    namespace: test
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: snapshotreconciler-role-binding
+  namespace: test
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: snapshotreconciler-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: kfreezer
+    namespace: test
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: josdk-crd-validating-cluster-role
+  namespace: test
+rules:
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/log
+      - pods/exec
+    verbs:
+      - '*'
+#  - apiGroups:
+#      - ""
+#    resources:
+#      - pods/exec
+#    verbs:
+#      - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: runreconciler-cluster-role
+  namespace: test
+rules:
+  - apiGroups:
+      - kfreezer.pawissanutt.github.io
+    resources:
+      - kfruns
+      - kfruns/status
+      - kfruns/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: snapshotreconciler-cluster-role
+  namespace: test
+rules:
+  - apiGroups:
+      - kfreezer.pawissanutt.github.io
+    resources:
+      - kfsnapshots
+      - kfsnapshots/status
+      - kfsnapshots/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+---
+#apiVersion: rbac.authorization.k8s.io/v1
+#kind: ClusterRoleBinding
+#metadata:
+#  name: runreconciler-crd-validating-role-binding
+#  namespace: test
+#roleRef:
+#  kind: ClusterRole
+#  apiGroup: rbac.authorization.k8s.io
+#  name: josdk-crd-validating-cluster-role
+#subjects:
+#  - kind: ServiceAccount
+#    name: kfreezer
+#    namespace: test
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: snapshotreconciler-crd-validating-role-binding
+  namespace: test
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: josdk-crd-validating-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: kfreezer
+    namespace: test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    app.quarkus.io/build-timestamp: 2022-04-25 - 01:24:47 +0000
+  labels:
+    app.kubernetes.io/name: kfreezer
+    app.kubernetes.io/version: 1.0.0-SNAPSHOT
+  name: kfreezer
+  namespace: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kfreezer
+      app.kubernetes.io/version: 1.0.0-SNAPSHOT
+  template:
+    metadata:
+      annotations:
+        app.quarkus.io/build-timestamp: 2022-04-25 - 01:24:47 +0000
+      labels:
+        app.kubernetes.io/name: kfreezer
+        app.kubernetes.io/version: 1.0.0-SNAPSHOT
+      namespace: test
+    spec:
+      containers:
+        - env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          envFrom:
+            - configMapRef:
+                name: kfreezer-cm
+          image: core.harbor.10.131.36.2.nip.io/oaas/kfreezer:latest
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /q/health/live
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 10
+          name: kfreezer
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /q/health/ready
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 10
+      serviceAccountName: kfreezer
+---
+apiVersion: v1
+data:
+  KFREEZER_S3_URL: http://snapshot-repository
+  KFREEZER_S3_BUCKET: kfreezer
+  KFREEZER_S3_ACCESSKEY: minio_access_key
+  KFREEZER_S3_SECRETKEY: minio_secret_key
+kind: ConfigMap
+metadata:
+  name: kfreezer-cm
+  namespace: test
