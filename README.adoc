@@ -8,7 +8,7 @@
 
 == What is KFreezer?
 
-KFreezer is a prototype Kubernetes operator that seamlessly snapshots the running job and reruns it via Kubernetes API.
+KFreezer is a prototype Kubernetes operator that seamlessly snapshots the running job and restores it via Kubernetes API.
 
 This project is implemented by  https://quarkus.io[Quarkus] and https://javaoperatorsdk.io[Java Operator SDK].
 
@@ -51,4 +51,46 @@ spec:
 [source,bash]
 ----
 kubectl apply -f sample_job/test-snapshot.yml
+----
+. check the snapshot state
++
+[source,bash]
+----
+kubectl get kfs
+----
++
+----
+NAMESPACE   NAME   JOB        POD                 STATE       SNAPSHOTTIME
+test        test   test-job   test-job--1-85znl   COMPLETED   2022-04-26T00:48:43.130220500Z
+----
+
+== Restore a job from the snapshot image
+. create `.yml` file as the following example
++
+[sourc,yaml]
+----
+apiVersion: kfreezer.pawissanutt.github.io/v1
+kind: KFRun
+metadata:
+  name: test-run
+spec:
+  snapshot: test   # snapshot name
+  jobName: <new-job-name>
+----
+. apply with `kubectl`
++
+[source,bash]
+----
+kubectl apply -f sample_job/test-run.yml
+----
+. check the restoring state
++
+[source,bash]
+----
+kubectl get kfr
+----
++
+----
+NAMESPACE   NAME       SNAPSHOT   JOBNAME   STATE
+test        test-run   test       new-job   COMPLETED
 ----
