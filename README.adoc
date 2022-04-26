@@ -10,7 +10,7 @@
 
 KFreezer is a prototype Kubernetes operator that seamlessly snapshots the running job and restores it via Kubernetes API.
 
-This project is implemented by  https://quarkus.io[Quarkus] and https://javaoperatorsdk.io[Java Operator SDK].
+This project is implemented by using  https://quarkus.io[Quarkus] and https://javaoperatorsdk.io[Java Operator SDK]. Also, this project utilizes https://github.com/twosigma/fastfreeze[FastFreeze] to perform snapshotting of the processes inside the container.
 
 == Build this project
 
