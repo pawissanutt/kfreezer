@@ -204,7 +204,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: kfreezer-cm
-          image: core.harbor.10.131.36.2.nip.io/oaas/kfreezer:latest
+          image: ghcr.io/pawissanutt/kfreezer:latest
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3

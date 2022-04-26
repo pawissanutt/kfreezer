@@ -1,0 +1,5 @@
+resources:
+  - kfruns.kfreezer.pawissanutt.github.io-v1.yml
+  - kfsnapshots.kfreezer.pawissanutt.github.io-v1.yml
+  - minio.yml
+  - operator.yml
