@@ -2,7 +2,6 @@ quarkus:
   jib:
     base-jvm-image: eclipse-temurin:17-jre-alpine
   container-image:
-    image: core.harbor.10.131.36.2.nip.io/oaas/kfreezer
     builder: jib
   operator-sdk:
     bundle:

@@ -10,7 +10,6 @@ public class KFSnapshotStatus {
 
     String state = PENDING;
     String jobSpecs;
-
     String snapshotTime;
     String error;
 

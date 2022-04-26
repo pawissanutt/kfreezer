@@ -1,0 +1,54 @@
+= KFreezer
+:toc:
+:toc-placement: preamble
+:toclevels: 2
+
+// Need some preamble to get TOC:
+{empty}
+
+== What is KFreezer?
+
+KFreezer is a prototype Kubernetes operator that seamlessly snapshots the running job and reruns it via Kubernetes API.
+
+This project is implemented by  https://quarkus.io[Quarkus] and https://javaoperatorsdk.io[Java Operator SDK].
+
+== Build this project
+
+[source,bash]
+----
+./mvnw package \
+  -Dquarkus.kubernetes.namespace=test \
+  -Dquarkus.container-image.build=true \
+  -Dquarkus.container-image.push=true \
+  -Dquarkus.container-image.username=user \
+  -Dquarkus.container-image.password=pass \
+  -Dquarkus.container-image.image=<image-repository>/kfreezer \
+----
+
+== Deploy to Kubernetes
+
+First, you have to change the namespace on each configuration file in link:dep[] directory. Then, you can apply them using `kubectl` command.
+
+[source,bash]
+----
+kubectl apply -f dep/minio.yml -f dep/operator.yml -f dep/kfruns.kfreezer.pawissanutt.github.io-v1.yml -f dep/kfsnapshots.kfreezer.pawissanutt.github.io-v1.yml
+----
+
+== Snapshot a running job
+. create `.yml` file as the following example
++
+[sourc,yaml]
+----
+apiVersion: kfreezer.pawissanutt.github.io/v1
+kind: KFSnapshot
+metadata:
+  name: test
+spec:
+  job: <job-name>
+----
+. apply with `kubectl`
++
+[source,bash]
+----
+kubectl apply -f sample_job/test-snapshot.yml
+----

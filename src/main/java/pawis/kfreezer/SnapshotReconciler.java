@@ -24,27 +24,6 @@ import java.util.regex.Pattern;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
 
-//@CSVMetadata(permissionRules = {
-//        @CSVMetadata.PermissionRule(
-//                apiGroups = "kfreezer.pawissanutt.github.io",
-//                resources = "KFSnapshots"
-//        ),
-//        @CSVMetadata.PermissionRule(
-//                apiGroups = "",
-//                resources = {"pods", "pods/log"},
-//                verbs = {"get", "list"}
-//        ),
-//        @CSVMetadata.PermissionRule(
-//                apiGroups = "batch",
-//                resources = {"jobs"},
-//                verbs = {"get", "list", "create"}
-//        ),
-//        @CSVMetadata.PermissionRule(
-//                apiGroups = "",
-//                resources = "pods/exec",
-//                verbs = {"create"}
-//        )
-//})
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSnapshot> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SnapshotReconciler.class);

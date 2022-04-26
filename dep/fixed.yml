@@ -1,46 +1,31 @@
+
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: snapshotreconciler-cluster-role
+  name: josdk-crd-validating-cluster-role
   namespace: test
 rules:
   - apiGroups:
-      - kfreezer.pawissanutt.github.io
+      - apiextensions.k8s.io
     resources:
-      - kfsnapshots
-      - kfsnapshots/status
-      - kfsnapshots/finalizers
+      - customresourcedefinitions
     verbs:
       - get
       - list
-      - watch
-      - create
-      - delete
-      - patch
-      - update
   - apiGroups:
       - batch
     resources:
       - jobs
     verbs:
-      - get
-      - list
-      - create
+      - '*'
   - apiGroups:
       - ""
     resources:
       - pods
       - pods/log
-    verbs:
-      - get
-      - list
-      - create
-  - apiGroups:
-      - ""
-    resources:
       - pods/exec
     verbs:
-      - create
+      - '*'
 ---
 apiVersion: v1
 data:
