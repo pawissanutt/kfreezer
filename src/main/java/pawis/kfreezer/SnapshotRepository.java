@@ -30,6 +30,18 @@ public class SnapshotRepository {
         }
     }
 
+    public String getUrl(KFSnapshot snapshot){
+        try {
+            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                    .method(Method.GET)
+                    .bucket(s3Config.bucket())
+                    .object(snapshot.getMetadata().getUid() + "/image.tar")
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void delete(KFSnapshot snapshot) {
         try {
             minioClient.removeObject(RemoveObjectArgs.builder()

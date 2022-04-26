@@ -4,6 +4,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.vertx.core.json.Json;
+import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pawis.kfreezer.model.KFSnapshot;
@@ -16,8 +17,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -45,7 +47,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
 //})
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSnapshot> {
-    private static final Logger LOGGER = LoggerFactory.getLogger( SnapshotReconciler.class );
+    private static final Logger LOGGER = LoggerFactory.getLogger(SnapshotReconciler.class);
 
     @Inject
     KubernetesClient client;
@@ -58,7 +60,7 @@ public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSna
         var status = kfSnapshot.getStatus();
         if (Objects.equals(status.getState(), KFSnapshotStatus.PENDING)) {
             doSnapshot(kfSnapshot);
-            if (status.getError() != null) {
+            if (status.getError()!=null) {
                 status.setState(KFSnapshotStatus.FAILED);
             }
             return UpdateControl.updateResourceAndStatus(kfSnapshot);
@@ -73,7 +75,7 @@ public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSna
         var kfsName = kfSnapshot.getMetadata().getName();
         LOGGER.info("KFSnapshot '{}': start with job '{}'", kfsName, jobName);
         var job = client.batch().v1().jobs().withName(jobName).get();
-        if (job == null) {
+        if (job==null) {
             status.setError("Cannot find job '%s'".formatted(spec.getJob()));
             return;
         }
@@ -94,36 +96,38 @@ public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSna
         LOGGER.info("KFSnapshot '{}': pod: '{}', container: '{}'",
                 kfsName, podName, containerName);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-//        ByteArrayOutputStream error = new ByteArrayOutputStream();
-        CountDownLatch execLatch = new CountDownLatch(1);
+        CompletableFuture<String> logFuture = new CompletableFuture<>();
         var url = snapshotRepo.allocate(kfSnapshot);
         LOGGER.info("KFSnapshot '{}': presigned url: '{}'",
                 kfsName, url);
         var cmd = """
                 mkdir -p .snapshot-image;
-                fastfreeze checkpoint --leave-running -i file:$PWD/.snapshot-image;
-                tar -cvzf snapshot-image.tar .snapshot-image;
+                CHECKPOINT_DIR="$HOME/.fastfreeze"
+                fastfreeze checkpoint --leave-running;
+                tar -czf snapshot-image.tar -C $HOME/.fastfreeze .;
                 ls -al;
                 CURL_CMD="curl -sS -X PUT --data-binary @snapshot-image.tar '%s'";
                 echo "$CURL_CMD";
                 sh -c "$CURL_CMD";
-                echo "COMPLETED"
+                echo "COMPLETED $CHECKPOINT_DIR"
                 """.formatted(url);
         var execWatch = client.pods().withName(podName)
                 .inContainer(containerName)
                 .writingOutput(out)
-                .redirectingError()
-                .usingListener(new MyPodExecListener(execLatch))
+                .writingError(out)
+                .usingListener(new MyPodExecListener(logFuture, out))
                 .exec("/bin/sh", "-c", cmd);
         try (execWatch) {
-            boolean latchTerminationStatus = execLatch.await(5, TimeUnit.SECONDS);
-            if (latchTerminationStatus) {
-                var log = out.toString();
-//                var errorLog = new String(execWatch.getError().readAllBytes());
-                LOGGER.info("KFSnapshot '{}': log \n{}",
-                        kfsName, log);
-            }
-
+            String resultLog = logFuture.get(5, TimeUnit.SECONDS);
+            LOGGER.info("KFSnapshot '{}': log \n{}",
+                    kfsName, resultLog);
+            Pattern pattern = Pattern.compile("COMPLETED (.*)\\n");
+            Matcher matcher = pattern.matcher(resultLog);
+            matcher.find();
+            var path = matcher.group(1);
+            spec.setSnapshotPath(path);
+        } catch (ExecutionException | TimeoutException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -139,10 +143,14 @@ public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSna
     }
 
     private static class MyPodExecListener implements ExecListener {
-        CountDownLatch execLatch;
+        //        CountDownLatch execLatch;
+        CompletableFuture<String> log;
+        ByteArrayOutputStream out;
 
-        public MyPodExecListener(CountDownLatch execLatch) {
-            this.execLatch = execLatch;
+        public MyPodExecListener(CompletableFuture<String> log,
+                                 ByteArrayOutputStream out) {
+            this.log = log;
+            this.out = out;
         }
 
         @Override
@@ -151,12 +159,13 @@ public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSna
 
         @Override
         public void onFailure(Throwable t, Response failureResponse) {
-            execLatch.countDown();
+            log.completeExceptionally(t);
         }
 
         @Override
-        public void onClose(int i, String s) {
-            execLatch.countDown();
+        public void onClose(int code, String reason) {
+            LOGGER.debug("Exit with: {} and with reason: {}", code, reason);
+            log.complete(out.toString());
         }
     }
 }
