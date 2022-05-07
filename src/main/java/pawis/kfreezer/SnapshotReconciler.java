@@ -96,7 +96,7 @@ public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSna
                 .usingListener(new MyPodExecListener(logFuture, out))
                 .exec("/bin/sh", "-c", cmd);
         try (execWatch) {
-            String resultLog = logFuture.get(5, TimeUnit.SECONDS);
+            String resultLog = logFuture.get(300, TimeUnit.SECONDS);
             LOGGER.info("KFSnapshot '{}': log \n{}",
                     kfsName, resultLog);
             Pattern pattern = Pattern.compile("COMPLETED (.*)\\n");
