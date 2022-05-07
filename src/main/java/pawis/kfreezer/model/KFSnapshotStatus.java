@@ -12,6 +12,7 @@ public class KFSnapshotStatus {
     String jobSpecs;
     String snapshotTime;
     String error;
+    Double snapshotDuration;
 
     public String getState() {
         return state;
@@ -43,5 +44,13 @@ public class KFSnapshotStatus {
 
     public void setSnapshotTime(String snapshotTime) {
         this.snapshotTime = snapshotTime;
+    }
+
+    public Double getSnapshotDuration() {
+        return snapshotDuration;
+    }
+
+    public void setSnapshotDuration(Double snapshotDuration) {
+        this.snapshotDuration = snapshotDuration;
     }
 }

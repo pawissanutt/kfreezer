@@ -4,7 +4,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.vertx.core.json.Json;
-import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pawis.kfreezer.model.KFSnapshot;
@@ -12,7 +11,6 @@ import pawis.kfreezer.model.KFSnapshotStatus;
 
 import javax.inject.Inject;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Instant;
@@ -79,6 +77,7 @@ public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSna
         var url = snapshotRepo.allocate(kfSnapshot);
         LOGGER.info("KFSnapshot '{}': presigned url: '{}'",
                 kfsName, url);
+        var startTime = System.currentTimeMillis();
         var cmd = """
                 mkdir -p .snapshot-image;
                 CHECKPOINT_DIR="$HOME/.fastfreeze"
@@ -105,6 +104,8 @@ public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSna
             matcher.find();
             var path = matcher.group(1);
             spec.setSnapshotPath(path);
+            double totalTime = (System.currentTimeMillis() - startTime) / 1000.0;
+            status.setSnapshotDuration(totalTime);
         } catch (ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }

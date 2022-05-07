@@ -9,3 +9,5 @@ quarkus:
       package-name: kfreezer-operator
     crd:
       apply: true
+  kubernetes-client:
+    namespace: test

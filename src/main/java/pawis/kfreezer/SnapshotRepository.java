@@ -3,7 +3,6 @@ package pawis.kfreezer;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.RemoveObjectArgs;
-import io.minio.errors.*;
 import io.minio.http.Method;
 import pawis.kfreezer.model.KFSnapshot;
 

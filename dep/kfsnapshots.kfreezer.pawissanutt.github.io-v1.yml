@@ -28,6 +28,8 @@ spec:
             type: object
           status:
             properties:
+              snapshotDuration:
+                type: number
               snapshotTime:
                 type: string
               jobSpecs:
@@ -42,16 +44,3 @@ spec:
     storage: true
     subresources:
       status: {}
-    additionalPrinterColumns:
-      - jsonPath: .spec.job
-        name: job
-        type: string
-      - jsonPath: .spec.pod
-        name: pod
-        type: string
-      - jsonPath: .status.state
-        name: state
-        type: string
-      - jsonPath: .status.snapshotTime
-        name: snapshotTime
-        type: string
