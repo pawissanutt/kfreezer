@@ -44,3 +44,19 @@ spec:
     storage: true
     subresources:
       status: {}
+    additionalPrinterColumns:
+      - jsonPath: .spec.job
+        name: job
+        type: string
+      - jsonPath: .spec.pod
+        name: pod
+        type: string
+      - jsonPath: .status.state
+        name: state
+        type: string
+      - jsonPath: .status.snapshotTime
+        name: snapshotTime
+        type: string
+      - jsonPath: .status.snapshotDuration
+        name: snapshotDuration
+        type: number

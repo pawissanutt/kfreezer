@@ -78,7 +78,7 @@ public class RunReconciler implements Reconciler<KFRun>, Cleaner<KFRun> {
         VolumeMount volumeMount = new VolumeMountBuilder().withMountPath(snapshotPath).withName("snapshot-image").build();
         var con = new ContainerBuilder().withName("snapshot-loader").withImage("rancher/curl").withCommand("sh", "-c").withArgs("""
                 curl -o "%s/image.tar" "%s";
-                tar -xvzf "%s/image.tar" -C "%s"; 
+                tar -xvf "%s/image.tar" -C "%s";
                 """.formatted(snapshotPath, snapshotUrl, snapshotPath, snapshotPath)).addToVolumeMounts(volumeMount).build();
         podSpec.getVolumes().add(volume);
         podSpec.getContainers().get(0).getVolumeMounts().add(volumeMount);

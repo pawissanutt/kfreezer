@@ -82,7 +82,7 @@ public class SnapshotReconciler implements Reconciler<KFSnapshot>, Cleaner<KFSna
                 mkdir -p .snapshot-image;
                 CHECKPOINT_DIR="$HOME/.fastfreeze"
                 fastfreeze checkpoint --leave-running;
-                tar -czf snapshot-image.tar -C $HOME/.fastfreeze .;
+                tar -cf snapshot-image.tar -C $HOME/.fastfreeze .;
                 ls -al;
                 CURL_CMD="curl -sS -X PUT --data-binary @snapshot-image.tar '%s'";
                 echo "$CURL_CMD";

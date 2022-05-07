@@ -36,3 +36,13 @@ spec:
     storage: true
     subresources:
       status: {}
+    additionalPrinterColumns:
+      - jsonPath: .spec.snapshot
+        name: snapshot
+        type: string
+      - jsonPath: .spec.jobName
+        name: jobName
+        type: string
+      - jsonPath: .status.state
+        name: state
+        type: string
